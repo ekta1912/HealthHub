@@ -2,10 +2,9 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
-    // This connects to the database running on your laptop
-    const conn = await mongoose.connect('mongodb://127.0.0.1:27017/HealthEase');
+    const conn = await mongoose.connect(process.env.MONGO_URI);
 
-    console.log(`MongoDB Connected (Local): ${conn.connection.host}`);
+    console.log(`MongoDB Connected (Cloud): ${conn.connection.host}`);
   } catch (error) {
     console.log(`Error: ${error.message}`);
     process.exit(1);

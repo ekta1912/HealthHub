@@ -1,6 +1,25 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useSelector } from "react-redux";
 
+const QUICK_PROMPTS = [
+  "What is paracetamol used for?",
+  "Tell me about diabetes",
+  "What are common acne medicines?",
+  "What should I do for low BP?",
+];
+
+const EMERGENCY_KEYWORDS = [
+  "chest pain",
+  "difficulty breathing",
+  "can't breathe",
+  "cannot breathe",
+  "severe bleeding",
+  "unconscious",
+  "loss of consciousness",
+  "seizure",
+  "stroke symptoms",
+  "heart attack",
+];
 // ==========================================
 // 🧠 MASSIVE SMART DATABASE (Including Heart, Derma, Gyno, Vaccines)
 // ==========================================
@@ -145,23 +164,47 @@ const MEDICAL_DATABASE = [
 const Chatbot = () => {
   const { user } = useSelector((state) => state.user);
   const [isOpen, setIsOpen] = useState(false);
-  const getCurrentTime = () => new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  const getCurrentTime = () =>
+  new Date().toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
-  const [messages, setMessages] = useState([
-    { 
-      sender: "bot", 
-      text: "Hello! I am **HealthBot Elite**. 🏥\n\nI am now updated with a Massive Encyclopedia! Ask me about BP, Sugar, Skin (Acne), Emergency medicines, or Women's Health.", 
-      time: getCurrentTime() 
-    }
-  ]);
-  
-  const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-  const chatEndRef = useRef(null);
+const storageKey = `healthbot-chat-${user?._id || user?.id || "guest"}`;
 
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isTyping]);
+const createWelcomeMessage = () => ({
+  sender: "bot",
+  text: "Hello! I am **HealthBot Elite**. 🏥\n\nAsk me about medicines, common health topics, or symptoms. For urgent or life-threatening symptoms, seek emergency medical care immediately.",
+  time: getCurrentTime(),
+});
+
+const [messages, setMessages] = useState(() => {
+  try {
+    const savedMessages = localStorage.getItem(storageKey);
+    return savedMessages
+      ? JSON.parse(savedMessages)
+      : [createWelcomeMessage()];
+  } catch (error) {
+    console.error("Unable to restore chat history:", error);
+    return [createWelcomeMessage()];
+  }
+});
+
+const [input, setInput] = useState("");
+const [isTyping, setIsTyping] = useState(false);
+const chatEndRef = useRef(null);
+
+useEffect(() => {
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(messages));
+  } catch (error) {
+    console.error("Unable to save chat history:", error);
+  }
+}, [messages, storageKey]);
+
+useEffect(() => {
+  chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+}, [messages, isTyping]);
 
   if (user?.isAdmin || user?.isDoctor) return null;
 
@@ -195,7 +238,24 @@ const Chatbot = () => {
     matchedMeds = [...new Set(matchedMeds)];
     return matchedMeds.length > 0 ? matchedMeds : null;
   };
+const getEmergencyResponse = (query) => {
+  const lowerQuery = query.toLowerCase();
 
+  const isEmergency = EMERGENCY_KEYWORDS.some((keyword) =>
+    lowerQuery.includes(keyword)
+  );
+
+  if (!isEmergency) return null;
+
+  return (
+    "🚨 **Possible emergency detected.**\n\n" +
+    "Symptoms such as chest pain, trouble breathing, severe bleeding, " +
+    "loss of consciousness, seizures, or possible stroke/heart-attack " +
+    "symptoms can require urgent medical attention.\n\n" +
+    "**Please seek emergency medical care now or contact your local emergency service.** " +
+    "Do not rely on this chatbot for emergency diagnosis or treatment."
+  );
+};
   // 💬 SMART CONVERSATIONAL ENGINE
   const getSmartFallbackResponse = (query) => {
     const lowerQuery = query.toLowerCase().trim();
@@ -211,42 +271,97 @@ const Chatbot = () => {
     return `Mujhe apne database mein **"${query}"** se judi exact jankari nahi mili.\n\n💡 **Tip:** Kripya kisi specific dawai ka naam (jaise *Dolo, Cardace*) ya bimari (jaise *Sugar, BP, Acne, Pregnancy*) try karein. Agar problem serious hai, toh please doctor ko dikhayein!`;
   };
 
-  const handleSend = () => {
-    if (input.trim() === "") return;
+  const handleSend = (messageFromPrompt = null) => {
+  const userText = (messageFromPrompt ?? input).trim();
 
-    const userText = input;
-    setMessages((prev) => [...prev, { sender: "user", text: userText, time: getCurrentTime() }]);
-    setInput(""); 
-    setIsTyping(true);
+  if (!userText || isTyping) return;
 
-    setTimeout(() => {
-      const foundMeds = searchDatabase(userText);
+  setMessages((prev) => [
+    ...prev,
+    {
+      sender: "user",
+      text: userText,
+      time: getCurrentTime(),
+    },
+  ]);
 
-      if (foundMeds) {
-        let responseText = "✅ **Analysis Complete:**\n\n";
-        
-        foundMeds.forEach(med => {
-          responseText += `💊 **${med.name}**\n`;
-          responseText += `• **Class:** ${med.class}\n`;
-          responseText += `• **Primary Use:** ${med.use}\n`;
-          responseText += `• **Side Effects:** ${med.sideEffects}\n\n`;
-          responseText += `${med.hinglishSummary}\n\n`;
-          responseText += `---------------------------\n\n`;
-        });
+  setInput("");
+  setIsTyping(true);
 
-        responseText += "⚠️ *Note: This AI is for information only. Always consult a verified doctor.*";
-        setMessages((prev) => [...prev, { sender: "bot", text: responseText.trim(), time: getCurrentTime() }]);
-      } else {
-        const smartResponse = getSmartFallbackResponse(userText);
-        setMessages((prev) => [...prev, { sender: "bot", text: smartResponse, time: getCurrentTime() }]);
-      }
+  setTimeout(() => {
+    const emergencyResponse = getEmergencyResponse(userText);
+
+    if (emergencyResponse) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "bot",
+          text: emergencyResponse,
+          time: getCurrentTime(),
+        },
+      ]);
+
       setIsTyping(false);
-    }, 600);
-  };
+      return;
+    }
+
+    const foundMeds = searchDatabase(userText);
+
+    if (foundMeds) {
+      let responseText = "✅ **Analysis Complete:**\n\n";
+
+      foundMeds.forEach((med) => {
+        responseText += `💊 **${med.name}**\n`;
+        responseText += `• **Class:** ${med.class}\n`;
+        responseText += `• **Primary Use:** ${med.use}\n`;
+        responseText += `• **Side Effects:** ${med.sideEffects}\n\n`;
+        responseText += `${med.hinglishSummary}\n\n`;
+        responseText += `---------------------------\n\n`;
+      });
+
+      responseText +=
+        "⚠️ *Information only — this chatbot does not replace a qualified medical professional.*";
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "bot",
+          text: responseText.trim(),
+          time: getCurrentTime(),
+        },
+      ]);
+    } else {
+      const smartResponse = getSmartFallbackResponse(userText);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "bot",
+          text: smartResponse,
+          time: getCurrentTime(),
+        },
+      ]);
+    }
+
+    setIsTyping(false);
+  }, 600);
+};
 
   const handleClearChat = () => {
-    setMessages([{ sender: "bot", text: "Chat history cleared! What do you want to search?", time: getCurrentTime() }]);
+  const welcomeMessage = {
+    sender: "bot",
+    text: "Chat history cleared! What do you want to search?",
+    time: getCurrentTime(),
   };
+
+  setMessages([welcomeMessage]);
+
+  try {
+    localStorage.removeItem(storageKey);
+  } catch (error) {
+    console.error("Unable to clear saved chat:", error);
+  }
+};
 
   return (
     <>

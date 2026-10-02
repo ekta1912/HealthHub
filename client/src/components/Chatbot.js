@@ -347,11 +347,15 @@ const getEmergencyResponse = (query) => {
   }, 600);
 };
 
-  const handleClearChat = () => {
-  const welcomeMessage = {
-    sender: "bot",
-    text: "Chat history cleared! What do you want to search?",
-    time: getCurrentTime(),
+  const handleClearChat=()=>{
+  const confirmed=window.confirm("Are you sure you want to clear this chat?");
+
+  if(!confirmed)return;
+
+  const welcomeMessage={
+    sender:"bot",
+    text:"Chat history cleared! What do you want to search?",
+    time:getCurrentTime(),
   };
 
   setMessages([welcomeMessage]);

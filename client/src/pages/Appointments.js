@@ -6,18 +6,22 @@ import { Table, Tag } from "antd";
 
 const Appointments = () => {
   const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const getAppointments = async () => {
     try {
+      setLoading(true);
       const res = await axios.get("/api/v1/user/user-appointments", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
+      setLoading(false);
       if (res.data.success) {
         setAppointments(res.data.data);
       }
     } catch (error) {
+      setLoading(false);
       console.log(error);
     }
   };
@@ -26,37 +30,70 @@ const Appointments = () => {
     getAppointments();
   }, []);
 
-  // Table ke Columns Design
+  // Table Columns Definition
   const columns = [
     {
       title: "Doctor Name",
       dataIndex: "name",
       render: (text, record) => (
         <span>
-          Dr. {record.doctorInfo.firstName} {record.doctorInfo.lastName}
+          {record.doctorInfo?.firstName ? (
+            <>Dr. {record.doctorInfo.firstName} {record.doctorInfo.lastName || ""}</>
+          ) : (
+            <span className="text-muted">Doctor Info Unavailable</span>
+          )}
         </span>
       ),
     },
     {
       title: "Date & Time",
       dataIndex: "date",
-      render: (text, record) => (
-        <span>
-          <i className="fa-regular fa-calendar me-1"></i>
-          {moment(record.date, "DD-MM-YYYY").format("DD-MM-YYYY")} &nbsp;
-          <i className="fa-regular fa-clock me-1"></i>
-          {moment(record.time, "HH:mm").format("HH:mm")}
-        </span>
-      ),
+      render: (text, record) => {
+        if (record.date === "VIDEO CONSULT") {
+          return (
+            <span>
+              <Tag color="cyan">
+                <i className="fa-solid fa-video me-1"></i> Video Consult
+              </Tag>
+              <span className="text-muted">{record.time || "Requested"}</span>
+            </span>
+          );
+        }
+
+        const formattedDate = moment(record.date, "DD-MM-YYYY").isValid()
+          ? moment(record.date, "DD-MM-YYYY").format("DD-MM-YYYY")
+          : record.date;
+        const formattedTime = moment(record.time, "HH:mm").isValid()
+          ? moment(record.time, "HH:mm").format("hh:mm A")
+          : record.time;
+
+        return (
+          <span>
+            <i className="fa-regular fa-calendar me-1 text-primary"></i>
+            {formattedDate} &nbsp;
+            <i className="fa-regular fa-clock me-1 text-secondary"></i>
+            {formattedTime}
+          </span>
+        );
+      },
     },
     {
       title: "Status",
       dataIndex: "status",
-      render: (text, record) => (
-        <Tag color={record.status === "pending" ? "warning" : "success"}>
-          {record.status.toUpperCase()}
-        </Tag>
-      ),
+      render: (text, record) => {
+        const statusColors = {
+          pending: "gold",
+          approved: "success",
+          rejected: "error",
+          cancelled: "default",
+        };
+        const currentStatus = record.status || "pending";
+        return (
+          <Tag color={statusColors[currentStatus] || "default"}>
+            {currentStatus.toUpperCase()}
+          </Tag>
+        );
+      },
     },
   ];
 
@@ -71,6 +108,7 @@ const Appointments = () => {
           columns={columns} 
           dataSource={appointments} 
           rowKey={(record) => record._id} 
+          loading={loading}
           className="shadow-sm"
         />
       </div>

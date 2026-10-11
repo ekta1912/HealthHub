@@ -15,6 +15,7 @@ import Appointments from "./pages/Appointments";
 import DoctorAppointments from "./pages/doctor/DoctorAppointments";
 import LandingPage from "./pages/LandingPage";
 import UserProfile from "./pages/UserProfile"; 
+import NotFound from "./pages/NotFound"; 
 
 function App() {
   return (
@@ -130,6 +131,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </>

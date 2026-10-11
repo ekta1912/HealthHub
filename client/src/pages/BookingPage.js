@@ -151,6 +151,7 @@ const BookingPage = () => {
                     className="w-100 mb-3"
                     size="large"
                     format="DD-MM-YYYY"
+                    disabledDate={(current) => current && current < moment().startOf("day")}
                     onChange={(value, dateString) => {
                       setDate(dateString);
                       setIsAvailable(false); // date change par button hide ho jayega

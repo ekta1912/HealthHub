@@ -15,7 +15,7 @@ const Layout = ({ children }) => {
   // logout function
   const handleLogout = () => {
     localStorage.clear();
-    message.success("logout successfully");
+    message.success("Logged out successfully");
     navigate("/login");
   };
 
@@ -68,9 +68,9 @@ const Layout = ({ children }) => {
                   </div>
                 );
               })}
-              <div className={`menu-item `} onClick={handleLogout}>
+              <div className="menu-item" onClick={handleLogout} style={{ cursor: "pointer" }}>
                 <i className="fa-solid fa-right-from-bracket"></i>
-                <Link to="/login">Logout</Link>
+                <span className="ms-3">Logout</span>
               </div>
             </div>
           </div>
@@ -88,7 +88,15 @@ const Layout = ({ children }) => {
                   <i className="fa-solid fa-bell"></i>
                 </Badge>
 
-                <Link to="/profile">{user?.name}</Link>
+                <Link to="/profile" className="d-flex align-items-center text-decoration-none">
+                  <span
+                    className="avatar-badge me-2 bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center"
+                    style={{ width: "32px", height: "32px", fontSize: "14px", fontWeight: "bold" }}
+                  >
+                    {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                  </span>
+                  <span className="fw-semibold text-dark">{user?.name || "User"}</span>
+                </Link>
               </div>
             </div>
             <div className="body">{children}</div>

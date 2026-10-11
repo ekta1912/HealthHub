@@ -12,13 +12,21 @@ const ApplyDoctor = () => {
   const navigate = useNavigate();
 
   // Handle Form Submission
-// Handle Form Submission
   const handleFinish = async (values) => {
     try {
       dispatch(showLoading());
+      const payload = {
+        ...values,
+        userId: user._id,
+        timings: values.timings ? [
+          values.timings[0].format ? values.timings[0].format("HH:mm") : values.timings[0],
+          values.timings[1].format ? values.timings[1].format("HH:mm") : values.timings[1],
+        ] : [],
+      };
+
       const res = await axios.post(
         "/api/v1/user/apply-doctor",
-        { ...values, userId: user._id },
+        payload,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -29,15 +37,13 @@ const ApplyDoctor = () => {
       
       if (res.data.success) {
         message.success(res.data.message);
-        navigate("/");
+        navigate("/dashboard");
       } else {
-        // ERROR FIX 1: Yahan pehle 'success' tha, ab 'message' kar diya
         message.error(res.data.message);
       }
     } catch (error) {
       dispatch(hideLoading());
       console.log(error);
-      // ERROR FIX 2: Agar server error de, toh uska message dikhao
       message.error("Something Went Wrong"); 
     }
   };
@@ -47,12 +53,7 @@ const ApplyDoctor = () => {
       <h1 className="text-center">Apply Doctor</h1>
       <hr />
       <Form layout="vertical" onFinish={handleFinish} className="m-3">
-        {/* ... FORM FIELDS SAME RAHENGE (Jo pichle module mein the) ... */}
-        {/* Agar aapne pichla code copy kiya tha toh bas wahi rehne dein, 
-            sirf upar ka import aur handleFinish function badal lein. */}
-            
-            {/* ... Paste same form fields here form Module 16 ... */}
-            <h4 className="">Personal Details :</h4>
+        <h4 className="">Personal Details :</h4>
             <Row gutter={20}>
             <Col xs={24} md={24} lg={8}>
                 <Form.Item label="First Name" name="firstName" required rules={[{ required: true }]}>

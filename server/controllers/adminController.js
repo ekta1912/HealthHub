@@ -4,7 +4,7 @@ const userModel = require("../models/userModel");
 // 1. GET ALL USERS LIST
 const getAllUsersController = async (req, res) => {
   try {
-    const users = await userModel.find({});
+    const users = await userModel.find({}, { password: 0 });
     res.status(200).send({
       success: true,
       message: "users data list",

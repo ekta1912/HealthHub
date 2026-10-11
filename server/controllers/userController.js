@@ -283,11 +283,26 @@ const bookingAvailabilityController = async (req, res) => {
 // UPDATE USER PROFILE
 const updateUserProfileController = async (req, res) => {
   try {
+    const targetUserId = req.body.userId || req.userId;
+    const { name, email, phone, address } = req.body;
+    
+    const updateData = {};
+    if (name) updateData.name = name.trim();
+    if (email) updateData.email = email.trim().toLowerCase();
+    if (phone !== undefined) updateData.phone = phone;
+    if (address !== undefined) updateData.address = address;
+
     const user = await userModel.findByIdAndUpdate(
-      req.body.userId, 
-      req.body, 
+      targetUserId, 
+      updateData, 
       { new: true }
     );
+    if (!user) {
+      return res.status(200).send({
+        success: false,
+        message: "User not found",
+      });
+    }
     user.password = undefined; // Password hide kar diya security ke liye
     res.status(200).send({
       success: true,

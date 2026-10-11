@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Layout from "../components/Layout";
-import { Row, Col, Spin, Empty, Card, message, Modal, Form, Input, Button } from "antd";
+import { Row, Col, Spin, Empty, Card, message, Modal, Form, Input, Button, Select } from "antd";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import moment from "moment";
@@ -11,6 +11,8 @@ const HomePage = () => {
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [appointments, setAppointments] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedSpecialization, setSelectedSpecialization] = useState("all");
   
   // Real stats for Admin
   const [totalUsers, setTotalUsers] = useState(0);
@@ -254,48 +256,107 @@ const HomePage = () => {
         )}
 
         {/* Patient View */}
-        {!user?.isDoctor && !user?.isAdmin && (
-          <div className="patient-view">
-            <h2 className="text-center mb-4" style={{ color: "#2c3e50", fontWeight: "bold" }}>
-              Find Your Doctor
-            </h2>
+        {!user?.isDoctor && !user?.isAdmin && (() => {
+          const specializations = Array.from(
+            new Set(doctors.map((d) => d.specialization).filter(Boolean))
+          );
+          const filteredDoctors = doctors.filter((doc) => {
+            const fullName = `${doc.firstName || ""} ${doc.lastName || ""}`.toLowerCase();
+            const docSpec = (doc.specialization || "").toLowerCase();
+            const query = searchTerm.toLowerCase().trim();
+            const matchesSearch = fullName.includes(query) || docSpec.includes(query);
+            const matchesSpec =
+              selectedSpecialization === "all" ||
+              docSpec === selectedSpecialization.toLowerCase();
+            return matchesSearch && matchesSpec;
+          });
 
-            {loading ? (
-              <div className="d-flex justify-content-center mt-5">
-                <Spin size="large" />
-              </div>
-            ) : doctors.length === 0 ? (
-              <Empty description="No Doctors Available Right Now" className="mt-5" /> 
-            ) : (
-              <Row gutter={[20, 20]}>
-                {doctors.map((doctor) => (
-                  <Col xs={24} sm={12} md={8} lg={6} key={doctor._id}>
-                    <Card className="shadow-sm border-0 text-center" style={{ borderRadius: "10px", cursor: "pointer" }}>
-                      <h5 className="text-dark">Dr. {doctor.firstName}</h5>
-                      <p className="text-muted mb-1">{doctor.specialization}</p>
-                      <p className="text-success fw-bold">Fees: Rs. {doctor.feesPerCunsultation}</p>
-                      
-                      <button 
-                        className="btn btn-primary w-100 mb-2 mt-2"
-                        onClick={() => navigate(`/doctor/book-appointment/${doctor._id}`)}
-                      >
-                        Book Clinic Visit
-                      </button>
-                      
-                      <button 
-                        className="btn btn-outline-success w-100"
-                        onClick={() => {
-                          setSelectedDoctorForVideo(doctor);
-                          setIsPatientModalVisible(true);
-                        }}
-                      >
-                        Video Consult
-                      </button>
-                    </Card>
-                  </Col>
-                ))}
+          return (
+            <div className="patient-view">
+              <h2 className="text-center mb-2" style={{ color: "#2c3e50", fontWeight: "bold" }}>
+                Find Your Doctor
+              </h2>
+              <p className="text-center text-muted mb-4">
+                Browse verified specialists and book an appointment with ease
+              </p>
+
+              {/* Search & Filter Bar */}
+              <Row gutter={[16, 16]} className="mb-4 justify-content-center">
+                <Col xs={24} md={12} lg={10}>
+                  <Input
+                    size="large"
+                    placeholder="Search by doctor name or specialty..."
+                    prefix={<i className="fa-solid fa-magnifying-glass text-muted me-2"></i>}
+                    value={searchTerm}
+                    allowClear
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </Col>
+                <Col xs={24} md={8} lg={6}>
+                  <Select
+                    size="large"
+                    className="w-100"
+                    value={selectedSpecialization}
+                    onChange={(val) => setSelectedSpecialization(val)}
+                  >
+                    <Select.Option value="all">All Specializations</Select.Option>
+                    {specializations.map((spec) => (
+                      <Select.Option key={spec} value={spec}>
+                        {spec}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Col>
               </Row>
-            )}
+
+              {loading ? (
+                <div className="d-flex justify-content-center mt-5">
+                  <Spin size="large" />
+                </div>
+              ) : filteredDoctors.length === 0 ? (
+                <Empty
+                  description={
+                    doctors.length === 0
+                      ? "No Doctors Available Right Now"
+                      : "No Doctors Match Your Search"
+                  }
+                  className="mt-5"
+                />
+              ) : (
+                <Row gutter={[20, 20]}>
+                  {filteredDoctors.map((doctor) => (
+                    <Col xs={24} sm={12} md={8} lg={6} key={doctor._id}>
+                      <Card className="shadow-sm border-0 text-center" style={{ borderRadius: "10px", cursor: "pointer" }}>
+                        <h5 className="text-dark">
+                          Dr. {doctor.firstName} {doctor.lastName}
+                        </h5>
+                        <p className="text-muted mb-1">{doctor.specialization}</p>
+                        <p className="text-success fw-bold">Fees: Rs. {doctor.feesPerCunsultation}</p>
+                        
+                        <button 
+                          className="btn btn-primary w-100 mb-2 mt-2"
+                          onClick={() => navigate(`/doctor/book-appointment/${doctor._id}`)}
+                        >
+                          Book Clinic Visit
+                        </button>
+                        
+                        <button 
+                          className="btn btn-outline-success w-100"
+                          onClick={() => {
+                            setSelectedDoctorForVideo(doctor);
+                            setIsPatientModalVisible(true);
+                          }}
+                        >
+                          Video Consult
+                        </button>
+                      </Card>
+                    </Col>
+                  ))}
+                </Row>
+              )}
+            </div>
+          );
+        })()}
 
             <Modal
               title="Request Video Consult"

@@ -6,15 +6,30 @@ const appointmentModel = require("../models/appointmentModel");
 // LOGIC 1: REGISTER CALLBACK
 const registerController = async (req, res) => {
   try {
-    const existingUser = await userModel.findOne({ email: req.body.email });
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(200).send({ message: 'Please provide all required fields', success: false });
+    }
+
+    if (password.length < 6) {
+      return res.status(200).send({ message: 'Password must be at least 6 characters long', success: false });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const existingUser = await userModel.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(200).send({ message: 'User Already Exist', success: false });
     }
-    const password = req.body.password;
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    req.body.password = hashedPassword;
-    const newUser = new userModel(req.body);
+
+    const newUser = new userModel({
+      ...req.body,
+      email: normalizedEmail,
+      password: hashedPassword,
+    });
     await newUser.save();
     res.status(201).send({ message: 'Register Successfully', success: true });
   } catch (error) {
@@ -26,11 +41,18 @@ const registerController = async (req, res) => {
 // LOGIC 2: LOGIN CALLBACK
 const loginController = async (req, res) => {
   try {
-    const user = await userModel.findOne({ email: req.body.email });
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(200).send({ message: 'Email and password are required', success: false });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await userModel.findOne({ email: normalizedEmail });
     if (!user) {
       return res.status(200).send({ message: 'User not found', success: false });
     }
-    const isMatch = await bcrypt.compare(req.body.password, user.password);
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(200).send({ message: 'Invalid Email or Password', success: false });
     }

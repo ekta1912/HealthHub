@@ -4,6 +4,7 @@ import { Form, Input, message, Button, Card } from "antd";
 import { useSelector, useDispatch } from "react-redux";
 import axios from "axios";
 import { showLoading, hideLoading } from "../redux/features/alertSlice";
+import { setUser } from "../redux/features/userSlice";
 
 const UserProfile = () => {
   const { user } = useSelector((state) => state.user);
@@ -25,8 +26,11 @@ const UserProfile = () => {
       dispatch(hideLoading());
       if (res.data.success) {
         message.success(res.data.message);
-        // Refresh page to show updated name
-        window.location.reload(); 
+        if (res.data.data) {
+          dispatch(setUser(res.data.data));
+        } else {
+          dispatch(setUser({ ...user, ...values }));
+        }
       } else {
         message.error(res.data.message);
       }

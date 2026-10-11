@@ -41,17 +41,36 @@ const Login = () => {
   return (
     <div className="form-container">
       <Form layout="vertical" onFinish={onFinishHandler} className="register-form">
-        <h3 className="text-center">Login Form</h3>
-        <Form.Item label="Email" name="email">
-          <Input type="email" required />
+        <h3 className="text-center mb-4">Login</h3>
+        <Form.Item
+          label="Email"
+          name="email"
+          rules={[
+            { required: true, message: "Please enter your email" },
+            { type: "email", message: "Please enter a valid email address" },
+          ]}
+        >
+          <Input
+            prefix={<i className="fa-solid fa-envelope text-muted me-2"></i>}
+            placeholder="example@mail.com"
+            size="large"
+          />
         </Form.Item>
-        <Form.Item label="Password" name="password">
-          <Input type="password" required />
+        <Form.Item
+          label="Password"
+          name="password"
+          rules={[{ required: true, message: "Please enter your password" }]}
+        >
+          <Input.Password
+            prefix={<i className="fa-solid fa-lock text-muted me-2"></i>}
+            placeholder="Enter password"
+            size="large"
+          />
         </Form.Item>
-        <Link to="/register" className="m-2">
+        <Link to="/register" className="m-2 d-inline-block">
           Not a user? Register here
         </Link>
-        <button className="btn btn-primary" type="submit">
+        <button className="btn btn-primary w-100 mt-2" type="submit">
           Login
         </button>
       </Form>

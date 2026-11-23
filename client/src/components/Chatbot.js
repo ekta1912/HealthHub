@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useSelector } from "react-redux";
 
+// eslint-disable-next-line no-unused-vars
 const QUICK_PROMPTS = [
   "What is paracetamol used for?",
   "Tell me about diabetes",

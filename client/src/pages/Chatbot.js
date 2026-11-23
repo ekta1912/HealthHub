@@ -81,6 +81,7 @@ const Chatbot = () => {
 
       recognitionRef.current = recognition;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Text to speech voice synthesis

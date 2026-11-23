@@ -84,7 +84,7 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-if (process.env.NODE_ENV !== "test") {
+if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`HealthHub Server running on port ${PORT} in ${process.env.NODE_ENV || "development"} mode`);
   });

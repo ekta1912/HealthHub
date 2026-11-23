@@ -2,37 +2,39 @@ const jwt = require("jsonwebtoken");
 
 module.exports = async (req, res, next) => {
   try {
-    // 1. Header Check
-    const authHeader = req.headers["authorization"];
-    
+    const authHeader = req.headers["authorization"] || req.headers["Authorization"];
+
     if (!authHeader) {
-        return res.status(401).send({ message: "No Token Provided", success: false });
+      return res.status(401).send({ message: "No Token Provided", success: false });
     }
 
-    // 2. Token Extraction
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : authHeader;
 
-    // 3. Verification
-    jwt.verify(token, process.env.JWT_SECRET, (err, decode) => {
+    if (!token) {
+      return res.status(401).send({ message: "Token Missing or Malformed", success: false });
+    }
+
+    const secret = process.env.JWT_SECRET || "healthhub_default_secret_key_2026";
+
+    jwt.verify(token, secret, (err, decode) => {
       if (err) {
-        return res.status(200).send({
-          message: "Auth Failed",
+        return res.status(401).send({
+          message: "Authentication Failed: Invalid or Expired Token",
           success: false,
         });
-      } else {
-        
-        // --- 🛠️ FIX: AGAR BODY NAHI HAI TO BANAO 🛠️ ---
-        if (!req.body) {
-            req.body = {}; 
-        }
-        // ----------------------------------------------
-
-        req.body.userId = decode.id;
-        next();
       }
+
+      if (!req.body) {
+        req.body = {};
+      }
+
+      req.userId = decode.id;
+      req.user = decode;
+      req.body.userId = decode.id;
+      next();
     });
   } catch (error) {
-    console.log(error);
+    console.error("Auth Middleware Error:", error.message);
     res.status(401).send({
       message: "Auth Failed",
       success: false,

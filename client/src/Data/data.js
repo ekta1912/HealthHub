@@ -1,9 +1,14 @@
-// user menu (patient and normal user)
+// user menu (patient and regular user)
 export const userMenu = [
   {
     name: "Home",
-    path: "/dashboard", // path ko / se badal kar /dashboard kar diya
+    path: "/dashboard",
     icon: "fa-solid fa-house-medical",
+  },
+  {
+    name: "Hospitals & Maps",
+    path: "/hospitals",
+    icon: "fa-solid fa-hospital",
   },
   {
     name: "My Appointments",
@@ -16,6 +21,11 @@ export const userMenu = [
     icon: "fa-solid fa-user-doctor",
   },
   {
+    name: "AI Doctor",
+    path: "/chatbot",
+    icon: "fa-solid fa-robot",
+  },
+  {
     name: "My Profile",
     path: "/profile",
     icon: "fa-solid fa-user-gear",
@@ -25,9 +35,14 @@ export const userMenu = [
 // admin menu (system admin)
 export const adminMenu = [
   {
-    name: "Home", 
-    path: "/dashboard", // path ko / se badal kar /dashboard kar diya
-    icon: "fa-solid fa-chart-pie", 
+    name: "Home",
+    path: "/dashboard",
+    icon: "fa-solid fa-chart-pie",
+  },
+  {
+    name: "Hospitals & Maps",
+    path: "/hospitals",
+    icon: "fa-solid fa-hospital",
   },
   {
     name: "Manage Doctors",
@@ -38,5 +53,34 @@ export const adminMenu = [
     name: "Manage Users",
     path: "/admin/users",
     icon: "fa-solid fa-hospital-user",
+  },
+];
+
+// doctor menu (verified practitioner)
+export const doctorMenu = [
+  {
+    name: "Home",
+    path: "/dashboard",
+    icon: "fa-solid fa-house-medical",
+  },
+  {
+    name: "Hospitals & Maps",
+    path: "/hospitals",
+    icon: "fa-solid fa-hospital",
+  },
+  {
+    name: "Appointments",
+    path: "/doctor-appointments",
+    icon: "fa-solid fa-calendar-check",
+  },
+  {
+    name: "AI Doctor",
+    path: "/chatbot",
+    icon: "fa-solid fa-robot",
+  },
+  {
+    name: "My Profile",
+    path: "/profile",
+    icon: "fa-solid fa-user-pen",
   },
 ];

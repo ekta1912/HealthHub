@@ -1,10 +1,9 @@
 import React from "react";
 import "../styles/LayoutStyles.css";
-import { adminMenu, userMenu } from "../Data/data";
+import { adminMenu, userMenu, doctorMenu } from "../Data/data";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Badge, message } from "antd";
-// chatbot import pehle se hai
 import Chatbot from "./Chatbot";
 
 const Layout = ({ children }) => {
@@ -12,44 +11,27 @@ const Layout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // logout function
+  // Logout handler
   const handleLogout = () => {
     localStorage.clear();
     message.success("Logged out successfully");
     navigate("/login");
   };
 
-  // doctor menu logic
-  const doctorMenu = [
-    {
-      name: "Home",
-      path: "/dashboard",
-      icon: "fa-solid fa-house",
-    },
-    {
-      name: "Appointments",
-      path: "/doctor-appointments",
-      icon: "fa-solid fa-list",
-    },
-    {
-      name: "Profile",
-      path: `/doctor/profile/${user?._id}`,
-      icon: "fa-solid fa-user-pen",
-    },
-  ];
-
-  // rendering menu list
+  // Select Sidebar menu based on role
   const SidebarMenu = user?.isAdmin
     ? adminMenu
     : user?.isDoctor
     ? doctorMenu
     : userMenu;
 
+  const profilePath = user?.isDoctor && user?._id ? `/doctor/profile/${user._id}` : "/profile";
+
   return (
     <>
       <div className="main">
         <div className="layout">
-          {/* sidebar section */}
+          {/* Sidebar Section */}
           <div className="sidebar">
             <div className="logo">
               <h6>HEALTH HUB</h6>
@@ -61,7 +43,7 @@ const Layout = ({ children }) => {
                 return (
                   <div
                     key={menu.name}
-                    className={`menu-item ${isActive && "active"}`}
+                    className={`menu-item ${isActive ? "active" : ""}`}
                   >
                     <i className={menu.icon}></i>
                     <Link to={menu.path}>{menu.name}</Link>
@@ -75,7 +57,7 @@ const Layout = ({ children }) => {
             </div>
           </div>
 
-          {/* main content section */}
+          {/* Main Content Section */}
           <div className="content">
             <div className="header">
               <div className="header-content" style={{ cursor: "pointer" }}>
@@ -88,7 +70,7 @@ const Layout = ({ children }) => {
                   <i className="fa-solid fa-bell"></i>
                 </Badge>
 
-                <Link to="/profile" className="d-flex align-items-center text-decoration-none">
+                <Link to={profilePath} className="d-flex align-items-center text-decoration-none">
                   <span
                     className="avatar-badge me-2 bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center"
                     style={{ width: "32px", height: "32px", fontSize: "14px", fontWeight: "bold" }}
@@ -102,8 +84,8 @@ const Layout = ({ children }) => {
             <div className="body">{children}</div>
           </div>
         </div>
-        
-        {/* chatbot ko yahan place kiya hai taaki wo layout ke upar float kare */}
+
+        {/* Floating Quick-Access Chatbot Assistant */}
         <Chatbot />
       </div>
     </>

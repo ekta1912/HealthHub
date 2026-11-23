@@ -1,64 +1,57 @@
 const express = require("express");
 const authMiddleware = require("../middlewares/authMiddleware");
+const { authLimiter, bookingLimiter } = require("../middlewares/rateLimiter");
 
-// SABHI CONTROLLERS EK HI JAGAH IMPORT KIYE 🟢
 const {
   loginController,
   registerController,
   authController,
   applyDoctorController,
-  getAllNotificationController, 
-  deleteAllNotificationController, 
+  getAllNotificationController,
+  deleteAllNotificationController,
   getAllDoctorsController,
-  bookAppointmentController, 
+  bookAppointmentController,
   userAppointmentsController,
-  bookingAvailabilityController, // <--- FIX 1: Ye yahan MISSING tha!
-  updateUserProfileController
+  bookingAvailabilityController,
+  cancelAppointmentController,
+  updateUserProfileController,
 } = require("../controllers/userController");
 
-// router object
 const router = express.Router();
 
-// routes
-// LOGIN || POST
-router.post("/login", loginController);
+// LOGIN || POST (Rate Limited)
+router.post("/login", authLimiter, loginController);
 
-// REGISTER || POST
-router.post("/register", registerController);
+// REGISTER || POST (Rate Limited)
+router.post("/register", authLimiter, registerController);
 
-// Auth || POST
+// AUTH / GET USER DATA || POST
 router.post("/getUserData", authMiddleware, authController);
 
 // APPLY DOCTOR || POST
 router.post("/apply-doctor", authMiddleware, applyDoctorController);
 
-// Notification User || POST
-router.post(
-  "/get-all-notification",
-  authMiddleware,
-  getAllNotificationController
-);
+// NOTIFICATIONS || POST
+router.post("/get-all-notification", authMiddleware, getAllNotificationController);
+router.post("/delete-all-notification", authMiddleware, deleteAllNotificationController);
 
-// Delete Notification || POST
-router.post(
-  "/delete-all-notification",
-  authMiddleware,
-  deleteAllNotificationController
-);
-
-// GET ALL DOCTORS || GET (Home Page ke liye)
+// GET ALL APPROVED DOCTORS || GET
 router.get("/getAllDoctors", authMiddleware, getAllDoctorsController);
 
-// BOOK APPOINTMENT || POST
-router.post("/book-appointment", authMiddleware, bookAppointmentController);
+// BOOK APPOINTMENT || POST (Rate Limited)
+router.post("/book-appointment", authMiddleware, bookingLimiter, bookAppointmentController);
+
+// CHECK BOOKING AVAILABILITY || POST
+router.post("/booking-availbility", authMiddleware, bookingAvailabilityController);
+router.post("/booking-availability", authMiddleware, bookingAvailabilityController);
 
 // GET USER APPOINTMENTS || GET
 router.get("/user-appointments", authMiddleware, userAppointmentsController);
 
-// POST || CHECK AVAILABILITY <--- FIX 2: Ise UPAR le aaye hain
-router.post("/booking-availbility", authMiddleware, bookingAvailabilityController);
+// CANCEL APPOINTMENT || POST
+router.post("/cancel-appointment", authMiddleware, cancelAppointmentController);
 
 // UPDATE USER PROFILE || POST
 router.post("/update-profile", authMiddleware, updateUserProfileController);
-// EXPORT HAMESHA SABSE NEECHE HOTA HAI 🟢
+
 module.exports = router;

@@ -1,11 +1,12 @@
 const express = require("express");
 const authMiddleware = require("../middlewares/authMiddleware");
+const { requireDoctorOrAdmin } = require("../middlewares/roleMiddleware");
 const {
   getDoctorInfoController,
   updateProfileController,
   getDoctorByIdController,
-  doctorAppointmentsController, // <--- NAYA IMPORT 🟢
-  updateStatusController,       // <--- NAYA IMPORT 🟢
+  doctorAppointmentsController,
+  updateStatusController,
 } = require("../controllers/doctorController");
 
 const router = express.Router();
@@ -14,15 +15,16 @@ const router = express.Router();
 router.post("/getDoctorInfo", authMiddleware, getDoctorInfoController);
 
 // POST UPDATE PROFILE
-router.post("/updateProfile", authMiddleware, updateProfileController);
+router.post("/updateProfile", authMiddleware, requireDoctorOrAdmin, updateProfileController);
 
-// POST GET SINGLE DOCTOR BY ID (Booking ke liye)
+// POST/GET GET SINGLE DOCTOR BY ID (Booking view)
 router.post("/getDoctorById", authMiddleware, getDoctorByIdController);
+router.get("/:id", authMiddleware, getDoctorByIdController);
 
-// GET APPOINTMENTS (Doctor ke liye) <--- NAYA ROUTE 🟢
-router.get("/doctor-appointments", authMiddleware, doctorAppointmentsController);
+// GET APPOINTMENTS (Doctor Only)
+router.get("/doctor-appointments", authMiddleware, requireDoctorOrAdmin, doctorAppointmentsController);
 
-// POST UPDATE STATUS (Approve/Reject) <--- NAYA ROUTE 🟢
-router.post("/update-status", authMiddleware, updateStatusController);
+// POST UPDATE STATUS (Approve/Reject/Cancel)
+router.post("/update-status", authMiddleware, requireDoctorOrAdmin, updateStatusController);
 
 module.exports = router;

@@ -44,7 +44,8 @@ export default function ProtectedRoute({ children }) {
     if (!user) {
       getUser();
     }
-  }, [user, getUser]); // Dependencies add ki
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   if (localStorage.getItem("token")) {
     return children;

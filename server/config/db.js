@@ -1,13 +1,22 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI);
+    const mongoUri =
+      process.env.MONGO_URI ||
+      process.env.MONGO_URL ||
+      "mongodb://localhost:27017/healthhub";
 
-    console.log(`MongoDB Connected (Cloud): ${conn.connection.host}`);
+    const conn = await mongoose.connect(mongoUri, {
+      serverSelectionTimeoutMS: 3000,
+    });
+
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
-    console.log(`Error: ${error.message}`);
-    process.exit(1);
+    console.error(`MongoDB Connection Error: ${error.message}`);
+    if (process.env.NODE_ENV !== "test") {
+      console.warn("HealthHub is running. Readiness probe will report database status.");
+    }
   }
 };
 

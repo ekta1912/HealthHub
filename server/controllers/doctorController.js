@@ -2,128 +2,153 @@ const doctorModel = require("../models/doctorModel");
 const appointmentModel = require("../models/appointmentModel");
 const userModel = require("../models/userModel");
 
-// 1. GET SINGLE DOCTOR INFO
-const getDoctorInfoController = async (req, res) => {
+// 1. GET SINGLE DOCTOR INFO BY USER ID
+const getDoctorInfoController = async (req, res, next) => {
   try {
-    const doctor = await doctorModel.findOne({ userId: req.body.userId });
+    const userId = req.userId || req.body.userId;
+    const doctor = await doctorModel.findOne({ userId });
+
+    if (!doctor) {
+      return res.status(404).send({
+        success: false,
+        message: "Doctor profile not found",
+      });
+    }
+
     res.status(200).send({
       success: true,
-      message: "doctor data fetch success",
+      message: "Doctor data fetch success",
       data: doctor,
     });
   } catch (error) {
-    console.log(error);
-    res.status(500).send({
-      success: false,
-      error,
-      message: "Error in Fetching Doctor Details",
-    });
+    next(error);
   }
 };
 
-// 2. UPDATE PROFILE
-const updateProfileController = async (req, res) => {
+// 2. UPDATE DOCTOR PROFILE
+const updateProfileController = async (req, res, next) => {
   try {
+    const userId = req.userId || req.body.userId;
     const doctor = await doctorModel.findOneAndUpdate(
-      { userId: req.body.userId },
-      req.body,
-      { new: true } // 🟢 ADDED: Taaki naya profile data turant wapas aaye
+      { userId },
+      { ...req.body },
+      { new: true, runValidators: true }
     );
-    res.status(201).send({
+
+    if (!doctor) {
+      return res.status(404).send({
+        success: false,
+        message: "Doctor profile not found",
+      });
+    }
+
+    res.status(200).send({
       success: true,
-      message: "Doctor Profile Updated",
+      message: "Doctor Profile Updated Successfully",
       data: doctor,
     });
   } catch (error) {
-    console.log(error);
-    res.status(500).send({
-      success: false,
-      message: "Doctor Profile Update Issue",
-      error,
-    });
+    next(error);
   }
 };
 
 // 3. GET SINGLE DOCTOR BY ID
-const getDoctorByIdController = async (req, res) => {
+const getDoctorByIdController = async (req, res, next) => {
   try {
-    const doctor = await doctorModel.findOne({ _id: req.body.doctorId });
+    const doctorId = req.body.doctorId || req.params.id;
+    const doctor = await doctorModel.findById(doctorId);
+
+    if (!doctor) {
+      return res.status(404).send({
+        success: false,
+        message: "Doctor not found",
+      });
+    }
+
     res.status(200).send({
       success: true,
       message: "Single Doc Info Fetched",
       data: doctor,
     });
   } catch (error) {
-    console.log(error);
-    res.status(500).send({
-      success: false,
-      error,
-      message: "Error in Single doctor info",
-    });
+    next(error);
   }
 };
 
 // 4. GET DOCTOR APPOINTMENTS
-const doctorAppointmentsController = async (req, res) => {
+const doctorAppointmentsController = async (req, res, next) => {
   try {
-    const doctor = await doctorModel.findOne({ userId: req.body.userId });
+    const userId = req.userId || req.body.userId;
+    const doctor = await doctorModel.findOne({ userId });
+
+    if (!doctor) {
+      return res.status(404).send({
+        success: false,
+        message: "Doctor account not found",
+      });
+    }
+
     const appointments = await appointmentModel.find({
       doctorId: doctor._id,
-    });
+    }).sort({ createdAt: -1 });
+
     res.status(200).send({
       success: true,
       message: "Doctor Appointments Fetch Successfully",
       data: appointments,
     });
   } catch (error) {
-    console.log(error);
-    res.status(500).send({
-      success: false,
-      error,
-      message: "Error in Doc Appointments",
-    });
+    next(error);
   }
 };
 
-// 5. STATUS UPDATE (APPROVE/REJECT)//for doctor
-const updateStatusController = async (req, res) => {
+// 5. STATUS UPDATE (APPROVE/REJECT/CANCEL)
+const updateStatusController = async (req, res, next) => {
   try {
-    const { appointmentsId, status } = req.body;
-    const appointments = await appointmentModel.findByIdAndUpdate(
+    const { appointmentsId, status, reason } = req.body;
+
+    const appointment = await appointmentModel.findByIdAndUpdate(
       appointmentsId,
-      { status },
-      { new: true } 
+      {
+        status,
+        cancellationReason: status === "cancelled" || status === "rejected" ? reason || `Status set to ${status}` : "",
+      },
+      { new: true }
     );
-    
-    // Patient ko Notification bhejna
-    const user = await userModel.findOne({ _id: appointments.userId });
-    const notification = user.notification;
-    notification.push({
-      type: "status-updated",
-      message: `Your appointment has been ${status}`,
-      onClickPath: "/appointments",
-    });
-    await user.save();
-    
+
+    if (!appointment) {
+      return res.status(404).send({
+        success: false,
+        message: "Appointment not found",
+      });
+    }
+
+    // Notify Patient
+    const user = await userModel.findById(appointment.userId);
+    if (user) {
+      user.notification = user.notification || [];
+      user.notification.push({
+        type: "status-updated",
+        message: `Your appointment with Dr. ${appointment.doctorInfo?.firstName || ""} has been ${status}`,
+        onClickPath: "/appointments",
+      });
+      await user.save();
+    }
+
     res.status(200).send({
       success: true,
-      message: "Appointment Status Updated Successfully",
+      message: `Appointment Status Updated to ${status}`,
+      data: appointment,
     });
   } catch (error) {
-    console.log(error);
-    res.status(500).send({
-      success: false,
-      error,
-      message: "Error In Update Status",
-    });
+    next(error);
   }
 };
 
-// Export
-module.exports = { 
-    getDoctorInfoController, 
-    updateProfileController, 
-    getDoctorByIdController,
-    doctorAppointmentsController,
-    updateStatusController,
+module.exports = {
+  getDoctorInfoController,
+  updateProfileController,
+  getDoctorByIdController,
+  doctorAppointmentsController,
+  updateStatusController,
 };

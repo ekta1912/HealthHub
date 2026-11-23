@@ -1,17 +1,24 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "HealthHub Healthcare Management API Server",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node tests/api.test.js",
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
+  "keywords": [
+    "healthcare",
+    "telehealth",
+    "appointments",
+    "gemini-ai",
+    "nodejs",
+    "express",
+    "mongodb"
+  ],
+  "author": "Ekta Singh",
+  "license": "MIT",
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "bcryptjs": "^3.0.3",

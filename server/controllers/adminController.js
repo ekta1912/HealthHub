@@ -1,10 +1,39 @@
 const doctorModel = require("../models/doctorModel");
 const userModel = require("../models/userModel");
+const appointmentModel = require("../models/appointmentModel");
+const hospitalModel = require("../models/hospitalModel");
 
-// 1. GET ALL USERS LIST
+// 1. GET ADMIN DASHBOARD STATS
+const getAdminStatsController = async (req, res, next) => {
+  try {
+    const [totalUsers, approvedDoctors, pendingDoctors, totalAppointments, totalHospitals] = await Promise.all([
+      userModel.countDocuments({}),
+      doctorModel.countDocuments({ status: "approved" }),
+      doctorModel.countDocuments({ status: "pending" }),
+      appointmentModel.countDocuments({}),
+      hospitalModel.countDocuments({}),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      message: "Admin statistics fetched successfully",
+      data: {
+        totalUsers,
+        approvedDoctors,
+        pendingDoctors,
+        totalAppointments,
+        totalHospitals,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 2. GET ALL USERS LIST
 const getAllUsersController = async (req, res) => {
   try {
-    const users = await userModel.find({}, { password: 0 });
+    const users = await userModel.find({}, { password: 0 }).sort({ createdAt: -1 });
     res.status(200).send({
       success: true,
       message: "users data list",
@@ -20,10 +49,10 @@ const getAllUsersController = async (req, res) => {
   }
 };
 
-// 2. GET ALL DOCTORS LIST
+// 3. GET ALL DOCTORS LIST
 const getAllDoctorsController = async (req, res) => {
   try {
-    const doctors = await doctorModel.find({});
+    const doctors = await doctorModel.find({}).sort({ createdAt: -1 });
     res.status(200).send({
       success: true,
       message: "Doctors Data list",
@@ -39,40 +68,37 @@ const getAllDoctorsController = async (req, res) => {
   }
 };
 
-// 3. ACCOUNT STATUS CHANGER (Approve/Reject Logic)
+// 4. ACCOUNT STATUS CHANGER (Approve/Reject Logic)
 const changeAccountStatusController = async (req, res) => {
   try {
     const { doctorId, status } = req.body;
-    
-    // 1. Doctor ka status update karo (pending -> approved/rejected)
-    // 🟢 FIX: { new: true } add kiya taaki turant update ho
+
     const doctor = await doctorModel.findByIdAndUpdate(doctorId, { status }, { new: true });
+    if (!doctor) {
+      return res.status(404).send({ success: false, message: "Doctor not found" });
+    }
 
-    // 2. User ko dhoondo taaki notification bhej sakein
     const user = await userModel.findOne({ _id: doctor.userId });
+    if (user) {
+      user.notification = user.notification || [];
+      user.notification.push({
+        type: "doctor-account-request-updated",
+        message: `Your Doctor Account Request Has Been ${status}`,
+        data: {
+          onClickPath: "/notification",
+        },
+      });
 
-    // 3. Notification bhejoh
-    const notification = user.notification;
-    notification.push({
-      type: "doctor-account-request-updated",
-      message: `Your Doctor Account Request Has ${status}`,
-      data: {
-        onClickPath: "/notification",
-      },
-    });
-
-    // 4. Agar status "approved" hai, toh User ko Doctor bana do
-    user.isDoctor = status === "approved" ? true : false;
-    
-    // 5. Data save karo
-    await user.save();
+      user.isDoctor = status === "approved";
+      user.role = status === "approved" ? "doctor" : "patient";
+      await user.save();
+    }
 
     res.status(201).send({
       success: true,
       message: "Account Status Updated",
       data: doctor,
     });
-
   } catch (error) {
     console.log(error);
     res.status(500).send({
@@ -83,12 +109,11 @@ const changeAccountStatusController = async (req, res) => {
   }
 };
 
-// 🟢 4. BLOCK USER LOGIC
+// 5. BLOCK USER LOGIC
 const blockUserController = async (req, res) => {
   try {
-    // FIX: authMiddleware 'userId' ko overwrite kar deta hai, isliye hum 'blockId' use kar rahe hain
-    const { blockId } = req.body; 
-    await userModel.findByIdAndDelete(blockId); 
+    const { blockId } = req.body;
+    await userModel.findByIdAndDelete(blockId);
     res.status(200).send({
       success: true,
       message: "User Blocked Successfully",
@@ -103,10 +128,10 @@ const blockUserController = async (req, res) => {
   }
 };
 
-// Chaaro functions export karein 🟢
-module.exports = { 
-  getAllUsersController, 
-  getAllDoctorsController, 
+module.exports = {
+  getAdminStatsController,
+  getAllUsersController,
+  getAllDoctorsController,
   changeAccountStatusController,
-  blockUserController 
+  blockUserController,
 };
